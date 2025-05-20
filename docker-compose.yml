@@ -11,6 +11,26 @@ services:
       - "5439:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: clienteapi_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: usuario
+      RABBITMQ_DEFAULT_PASS: usuario
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+  mailhog:
+    image: mailhog/mailhog
+    container_name: clientesapi_mailhog
+    restart: always
+    ports:
+      - "1025:1025"   # Porta SMTP
+      - "8025:8025"   # Interface web do MailHog
 volumes:
   postgres_data:
+  rabbitmq_data:
+

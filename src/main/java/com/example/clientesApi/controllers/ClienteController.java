@@ -1,18 +1,21 @@
 package com.example.clientesApi.controllers;
 
+import com.example.clientesApi.dtos.ClienteRequestDto;
 import com.example.clientesApi.dtos.ClienteRequestPostDto;
 import com.example.clientesApi.dtos.ClienteResponseDto;
 import com.example.clientesApi.dtos.EnderecoResponseDto;
 import com.example.clientesApi.entities.Cliente;
 import com.example.clientesApi.entities.Endereco;
 import com.example.clientesApi.repositories.ClienteRepository;
+import com.example.clientesApi.services.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Controller
@@ -21,59 +24,64 @@ public class ClienteController {
 
     @Autowired
     ClienteRepository clienteRepository;
+    @Autowired
+    ClienteService clienteService;
 
-    @PostMapping("/criar")
-    public ClienteResponseDto post(@RequestBody ClienteRequestPostDto clienteRequestPostDto) {
+    @PostMapping("/cadastrar")
+    public ResponseEntity<?> cadastrar(@RequestBody ClienteRequestPostDto clienteRequestPostDto) {
 
-        Cliente cliente = new Cliente();
-        cliente.setNome(clienteRequestPostDto.getNome());
-        cliente.setEmail(clienteRequestPostDto.getEmail());
-        cliente.setCpf(clienteRequestPostDto.getCpf());
-        cliente.setDataNascimento(clienteRequestPostDto.getDataNascimento());
+        try {
+            var clienteResponseDto = clienteService.cadastrar(clienteRequestPostDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(clienteResponseDto);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-        List<Endereco> enderecos = clienteRequestPostDto.getEnderecos().stream().map(enderecoRequestDTO -> {
-            Endereco endereco = new Endereco();
-            endereco.setLogradouro(enderecoRequestDTO.getLogradouro());
-            endereco.setComplemento(enderecoRequestDTO.getComplemento());
-            endereco.setNumero(enderecoRequestDTO.getNumero());
-            endereco.setBairro(enderecoRequestDTO.getBairro());
-            endereco.setCidade(enderecoRequestDTO.getCidade());
-            endereco.setUf(enderecoRequestDTO.getUf());
-            endereco.setCep(enderecoRequestDTO.getCep());
-
-            endereco.setCliente(cliente); // relacionamento
-            return endereco;
-        }).collect(Collectors.toList());
-
-        cliente.setEnderecos(enderecos);
-
-        Cliente clienteSalvo = clienteRepository.save(cliente);
-
-        // Criar o objeto de resposta
-        ClienteResponseDto clienteResponseDto = new ClienteResponseDto();
-
-        clienteResponseDto.setNome(cliente.getNome());
-        clienteResponseDto.setEmail(cliente.getEmail());
-        clienteResponseDto.setCpf(cliente.getCpf());
-        clienteResponseDto.setDataNascimento(cliente.getDataNascimento());
-
-        List<EnderecoResponseDto> enderecosReponse = clienteSalvo.getEnderecos().stream().map(endereco -> {
-            EnderecoResponseDto enderecoResponse = new EnderecoResponseDto();
-            enderecoResponse.setLogradouro(endereco.getLogradouro());
-            enderecoResponse.setComplemento(endereco.getComplemento());
-            enderecoResponse.setNumero(endereco.getNumero());
-            enderecoResponse.setBairro(endereco.getBairro());
-            enderecoResponse.setCidade(endereco.getCidade());
-            enderecoResponse.setUf(endereco.getUf());
-            enderecoResponse.setCep(endereco.getCep());
-
-            return enderecoResponse;
-        }).collect(Collectors.toList());
-
-        clienteResponseDto.setEnderecos(enderecosReponse);
-
-        return clienteResponseDto;
     }
 
+
+    @PutMapping("/atualizar")
+    public ResponseEntity<?> atualizar(@RequestBody ClienteRequestDto clienteRequestDto) {
+
+        try {
+            var clienteResponseDto = clienteService.atualizar(clienteRequestDto);
+            return ResponseEntity.status(HttpStatus.OK).body(clienteResponseDto);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+    }
+
+    @GetMapping("/listar")
+    public ResponseEntity<?> listar(){
+
+        try {
+            var clientesResponse = clienteService.listar();
+            return ResponseEntity.status(HttpStatus.OK).body(clientesResponse);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        }
+
+    @GetMapping("/Listar/{id}")
+    private ResponseEntity<?> listarPorID(@PathVariable UUID id){
+
+        ClienteResponseDto clienteResponseDto = clienteService.listarPorID(id);
+
+        if(clienteResponseDto == null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cliente não encontrado");
+        }else
+            return ResponseEntity.status(HttpStatus.OK).body(clienteResponseDto);
+    }
+
+    @DeleteMapping("/deletar/{id}")
+    public ResponseEntity<?> deletar(@PathVariable UUID id) {
+        try {
+            return clienteService.deletar(id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 }
